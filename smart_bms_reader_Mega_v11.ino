@@ -12,8 +12,9 @@
     SoftwareSerial MySoftSerial(10, 11); // RX, TX  //  un rem
     #define MySerial MySoftSerial                    //  change MySerial
 */
-#define MySerial Serial3  // set this to the hardware serial port you wish to use... 
+//#define MySerial Serial3  // set this to the hardware serial port you wish to use... 
 //                           Change to, MySoftSerial, if using uno
+HardwareSerial *MySerial;
 
 String inString = "";      // string to hold input
 String inStringpc = "";    // string to hold PC input
@@ -32,7 +33,9 @@ void setup()
   // Serial.begin(9600); // will be sending all data to serial, for later analysis
   Serial.begin(115200); // will be sending all data to serial, for later analysis
   // newline in serial com on for 2way communication.
-  MySerial.begin(9600);  // set the data rate for the MySerial port
+  Serial1.begin(9600);  // set the data rate for the MySerial port
+  Serial1.begin(9600);  // set the data rate for the MySerial port
+  MySerial = &Serial1;
 }
 //======================================================================================
 //                 LOOP
@@ -54,6 +57,12 @@ void loop()
     delay (pausel * 1000);
   }
 
+  if (inStringpc.equalsIgnoreCase("show1")) { //Serial 1
+  MySerial = &Serial1;
+  }
+  if (inStringpc.equalsIgnoreCase("show2")) { //Serial 2
+  MySerial = &Serial2;
+  }
   if (inStringpc.equalsIgnoreCase("showoff")) { //do not show all data SHOWOFF
     show = 0;
   }
@@ -182,7 +191,7 @@ void loop()
     flush(); // flush first
     delay (100);
     uint8_t data1[7] = {221, 165, BYTE3, 0, 255, BYTE6, 119};
-    MySerial.write(data1, 7);
+    MySerial->write(data1, 7);
     get_bms_feedback(); // get the data reply
     // highbyte = (inInts[0]); // bytes 5 and 6, is where the actual data is
     BatteryConfigH = (inInts[0]);
@@ -252,7 +261,7 @@ void loop()
     // 221 90  45  2 BYTE5 BYTE6 255 BYTE8 119
 
     uint8_t data[9] = {221, 90, 45, 2, BYTE5, BYTE6, 255, BYTE8, 119};
-    MySerial.write(data, 9);
+    MySerial->write(data, 9);
 
     // e_write_request_end(); // not needed
     write_request_end(); // finished eprom reads, stick with this one
@@ -548,7 +557,7 @@ uint8_t call_read_eprom()
   flush(); // flush first
   // BYTES 3 and 6 need to be set first
   uint8_t data1[7] = {221, 165, BYTE3, 0, 255, BYTE6, 119};
-  MySerial.write(data1, 7);
+  MySerial->write(data1, 7);
   get_bms_feedback(); // get the data reply
   highbyte = (inInts[0]); // bytes 5 and 6, is where the actual data is
   lowbyte = (inInts[1]);
@@ -579,7 +588,7 @@ void call_Basic_info()
   //  DD  A5 03 00  FF  FD  77
   // 221 165  3  0 255 253 119
   uint8_t data[7] = {221, 165, 3, 0, 255, 253, 119};
-  MySerial.write(data, 7);
+  MySerial->write(data, 7);
 }
 //--------------------------------------------------------------------------
 void call_get_cells_v()
@@ -589,7 +598,7 @@ void call_get_cells_v()
   // DD  A5  4 0 FF  FC  77
   // 221 165 4 0 255 252 119
   uint8_t data[7] = {221, 165, 4, 0, 255, 252, 119};
-  MySerial.write(data, 7);
+  MySerial->write(data, 7);
 }
 //--------------------------------------------------------------------------
 void call_Hardware_info()
@@ -600,7 +609,7 @@ void call_Hardware_info()
   // 221 165  5  0 255 251 119
   uint8_t data[7] = {221, 165, 5, 0, 255, 251, 119};
   // uint8_t data[7] = {DD, A5, 05, 00, FF, FB, 77};
-  MySerial.write(data, 7);
+  MySerial->write(data, 7);
 }
 //-------------------------------------------------------------------------
 void write_request_start()
@@ -609,7 +618,7 @@ void write_request_start()
 
   //   DD 5A 00  02 56  78  FF 30   77
   uint8_t data[9] = {221, 90, 0, 2, 86, 120, 255, 48, 119};
-  MySerial.write(data, 9);
+  MySerial->write(data, 9);
 }
 //----------------------------------------------------------------------------
 void write_request_end()
@@ -618,7 +627,7 @@ void write_request_end()
 
   //   DD 5A 01  02 00 00   FF  FD 77
   uint8_t data[9] = {221, 90, 1, 2, 0, 0, 255, 253, 119};
-  MySerial.write(data, 9);
+  MySerial->write(data, 9);
 }
 //----------------------------------------------------------------------------
 void e_write_request_end()
@@ -629,7 +638,7 @@ void e_write_request_end()
   //  221  90  1 2 40  40  255  173  119
 
   uint8_t data[9] = {221, 90, 1, 2, 40, 40, 255, 173, 119};
-  MySerial.write(data, 9);
+  MySerial->write(data, 9);
 }
 
 //-------------------------------------------------------------------------
@@ -649,7 +658,7 @@ void control_mosfet()  //5A E1
   //   DD 5A  E1 02 00  BYTE6  FF BYTE8  77
   //  221 90 225  2  0  BYTE6 255 BYTE8 119
   uint8_t data[9] = {221, 90, 225, 2, 0, BYTE6, 255, BYTE8, 119};
-  MySerial.write(data, 9);
+  MySerial->write(data, 9);
   // Serial.write(data, 9);
 }
 // -------------------------------------------------------------
@@ -669,7 +678,7 @@ void change_cells_balance()  //5A E2
   //   DD 5A E2  2  0  BYTE6  FF BYTE8  77
   //  221 90 226 2  0  BYTE6  255 BYTE8 119
   uint8_t data[9] = {221, 90, 226, 2, 0, BYTE6, 255, BYTE8, 119};
-  MySerial.write(data, 9);
+  MySerial->write(data, 9);
 }
 //--------------------------------------------------------------------------
 /*
@@ -686,7 +695,7 @@ void eprom_read()   //BAR CODE
   //  221 165 162 0 255 94 119
   // uint8_t data[7] = {221, 165, 162, 0, 255, 94, 119};
   uint8_t data[7] = {221, 165, 32, 0, 255, 224, 119};
-  MySerial.write(data, 7);
+  MySerial->write(data, 7);
 }
 
 //-------------------------------------------------------------------------
@@ -698,14 +707,14 @@ void eprom_end() // no need at mo
   //221 165 170 0 255 86  119
   // from eprom read
   uint8_t data[7] = {221, 165, 170, 0, 255, 86, 119};
-  MySerial.write(data, 7);
+  MySerial->write(data, 7);
 }
 //------------------------------------------------------------------------------
 void flush()
 { // FLUSH
   delay(100); // give it a mo to settle, seems to miss occasionally without this
-  while (MySerial.available() > 0)
-  { MySerial.read();
+  while (MySerial->available() > 0)
+  { MySerial->read();
   }
   delay(50); // give it a mo to settle, seems to miss occasionally without this
 }
@@ -716,11 +725,11 @@ void get_bms_feedback()  // returns with up to date, inString= chars, inInts= nu
 {
   inString = ""; // clear instring for new incoming
   delay(100); // give it a mo to settle, seems to miss occasionally without this
-  if (MySerial.available() > 0) {
+  if (MySerial->available() > 0) {
     {
       for (int i = 0; i < 4; i++)               // just get first 4 bytes
       {
-        incomingByte = MySerial.read();
+        incomingByte = MySerial->read();
         if (i == 3)
         { // could look at 3rd byte, it's the ok signal
           Length = (incomingByte); // The fourth byte holds the length of data, excluding last 3 bytes checksum etc
@@ -733,7 +742,7 @@ void get_bms_feedback()  // returns with up to date, inString= chars, inInts= nu
       }
       //  Length = Length + 2; // want to get the checksum too, for writing back, saves calculating it later
       for (int i = 0; i < Length + 2; i++) { // get the checksum in last two bytes, just in case need later
-        incomingByte = MySerial.read(); // get the rest of the data, how long it might be.
+        incomingByte = MySerial->read(); // get the rest of the data, how long it might be.
         inString += (char)incomingByte; // convert the incoming byte to a char and add it to the string
         inInts[i] = incomingByte;       // save incoming byte to array as int
       }
